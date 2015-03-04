@@ -24,7 +24,7 @@ public class GaborFilter {
 	private double bandwidth;
 	private int width;
 	private int height;
-	private double[][] kernel;
+
 
 	public GaborFilter(double waveLength, double[] orientations, double offset, double aspectRatio, double bandwidth, int width, int height) {
 		this.aspectRatio = aspectRatio;
@@ -34,19 +34,6 @@ public class GaborFilter {
 		this.waveLength = waveLength;
 		this.orientations = orientations;
 		this.offset = offset;
-		this.kernel = new double[width][height];
-	}
-	
-	public double[][] getKernelArray() {
-		return this.kernel;
-	}
-	
-	public int getWidth() {
-		return this.width;
-	}
-	
-	public int getHeight() {
-		return this.height;
 	}
 
 	/**
@@ -87,19 +74,6 @@ public class GaborFilter {
 	* 
 	* 
 	*/
-	 private static double[][] convertTo2DUsingGetRGB(BufferedImage image) {
-	      int width = image.getWidth();
-	      int height = image.getHeight();
-	      double[][] result = new double[height][width];
-
-	      for (int row = 0; row < height; row++) {
-	         for (int col = 0; col < width; col++) {
-	            result[row][col] = (double) image.getRGB(row, col);
-	         }
-	      }
-
-	      return result;
-	   }
 	public static double[][] convertTo2DWithoutUsingGetRGB(BufferedImage image) {
 
 		final byte[] pixels = ((DataBufferByte)image.getRaster().getDataBuffer()).getData();
@@ -144,7 +118,11 @@ public class GaborFilter {
 	}
 
 
-	public static double singlePixelConvolution(double [][] input, int x, int y, double [][] k, int kernelWidth, int kernelHeight){
+	public static double singlePixelConvolution(double [][] input,
+	int x, int y,
+	double [][] k,
+	int kernelWidth,
+	int kernelHeight){
 		double output = 0;
 		for(int i=0;i<kernelWidth;++i){
 			for(int j=0;j<kernelHeight;++j){
@@ -154,7 +132,11 @@ public class GaborFilter {
 		return output;
 	}
 
-	public static int applyConvolution(int [][] input, int x, int y, double [][] k, int kernelWidth, int kernelHeight){
+	public static int applyConvolution(int [][] input,
+	int x, int y,
+	double [][] k,
+	int kernelWidth,
+	int kernelHeight){
 		int output = 0;
 		for(int i=0;i<kernelWidth;++i){
 			for(int j=0;j<kernelHeight;++j){
@@ -177,7 +159,11 @@ public class GaborFilter {
 	* @param kernelHeight the height of the kernel
 	* @return the 2D array representing the new image
 	*/
-	public static double [][] convolution2D(double [][] input, int width, int height, double [][] kernel, int kernelWidth, int kernelHeight){
+	public static double [][] convolution2D(double [][] input,
+	int width, int height,
+	double [][] kernel,
+	int kernelWidth,
+	int kernelHeight){
 		int smallWidth = width - kernelWidth + 1;
 		int smallHeight = height - kernelHeight + 1;
 		double [][] output = new double [smallWidth][smallHeight];
@@ -202,15 +188,13 @@ public class GaborFilter {
 	*
 	* @return - Kernel
 	*/
-	public void printKernel(double[][] kernel2) {
-		for (int i =0; i<kernel2.length; i++) {
-			for (int j=0; j< kernel2[i].length; j++) {
-				System.out.print(kernel2[i][j] + " ");
-			}
-			
+	public void printKernel(float[] data) {
+		for (float d : data) {
+			System.out.print(d + " ");
 		}
+		System.out.println();
 	}
-	
+
 
 	public Kernel getKernel() {
 		double sigma = calculateSigma(waveLength, bandwidth);
@@ -221,8 +205,7 @@ public class GaborFilter {
 					double x1 = x*Math.cos(orientation) + y*Math.sin(orientation);
 					double y1 = -x*Math.sin(orientation) + y*Math.cos(orientation);
 					data[k] += (float)(gaborFunction(x1, y1, sigma, aspectRatio, waveLength, offset));
-					
-					//printKernel(kernel);
+					printKernel(data);
 
 				}
 				k++;
@@ -238,12 +221,10 @@ public class GaborFilter {
 		for(int i = 0; i < width; i++) {
 			for(int j = 0; j < height; j++) {
 				data[i*j + j] -= sum;
-				
-				// building kernel matrix
-				kernel[i][j] = (double)data[i*j + j];
 			}
 		}
-		// ignore this call
+		//printKernel(data);
+
 		return new Kernel(width, height, data);
 	}
 
@@ -262,44 +243,36 @@ public class GaborFilter {
 
 
 	public static void main(String[] args) throws IOException {
+		// TODO Auto-generated method stub
+		/*
+		JFrame frame=new JFrame("display image");
+		Panel panel = new GaborFilter();
+		frame.getContentPane().add(panel);
+		frame.setSize(500,500);
+		frame.setVisible(true);
+		*/
 
-		File file = new File("./src/Images/tank3-filtered.jpg");
-		File file2 = new File("./src/Images/test2.jpg");
+		//File file = new File("./src/Images/tank3-filtered.jpg");
+		File file = new File("./src/Images/hiresbird-filtered2.jpg");
 
-		//Image image = ImageIO.read(new File("./src/Images/tank3.jpg"));
+		//   Image image = ImageIO.read(new File("./src/Images/tank3.jpg"));
 		Image image = ImageIO.read(new File("./src/Images/hiresbird.jpg"));
 
 		// Creating buffered image from the given file. NOTE: It's crucial to build the data that way!
-		BufferedImage bufferedImage = new BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_RGB);
+		BufferedImage bufferedImage = new BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_4BYTE_ABGR);
 		Graphics g = bufferedImage.getGraphics();
 		g.drawImage(image, 0, 0, null);
 
 		System.out.println("BufferedImage: " +bufferedImage.toString());
-		
-		
-		//double[][] convert2D = convertTo2DWithoutUsingGetRGB(bufferedImage);
-		double[][] convert2D = convertTo2DUsingGetRGB(bufferedImage);
-
-		GaborFilter gfilter = new GaborFilter(16, new double[] {Math.PI/2}, 0, 0.5, 1, 3, 3); 
-
-		ImageIO.write(gfilter.filter(bufferedImage, null), "jpg", file);
-		
-	
-		double[][] result = convolution2D(convert2D, image.getWidth(null), image.getHeight(null), gfilter.getKernelArray(), gfilter.getWidth(), gfilter.getHeight()); 
-		gfilter.printKernel(result);
-		
-        BufferedImage filtered = new BufferedImage( result.length, result[0].length, BufferedImage.TYPE_INT_RGB);
-
-        int xLength = result.length;
-        int yLength =  result[0].length;
-        for(int x = 0; x < xLength; x++) {
-            for(int y = 0; y < yLength; y++) {
-                int rgb = (int)result[x][y]<<16 | (int)result[x][y] << 8 | (int)result[x][y];
-                filtered.setRGB(x, y, rgb);
-            }
-        }
-		ImageIO.write(filtered, "jpg", file2);
-        System.out.println("\nend");
+		double[][] convert2D = convertTo2DWithoutUsingGetRGB(bufferedImage);
+		/*
+		for (int i = 0; i <convert2D.length; i++) {
+		for (int j = 0; j < convert2D )
+		}
+		*/
+		// Writing the filtered image to disk
+		ImageIO.write(new GaborFilter(5, new double[] {0, Math.PI/2, Math.PI}, 0, 0.5, 1, 3, 3).filter(bufferedImage, null), "jpg", file);
+		//ImageIO.write(new GaborFilter(16, new double[] {0,Math.PI/2, Math.PI}, 0, 0.75, 1, 9, 9).filter(bufferedImage, null), "jpg", file);
 
 	}
 }
